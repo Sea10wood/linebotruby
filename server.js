@@ -3,6 +3,7 @@
 const express = require('express');
 const line = require('@line/bot-sdk');
 const PORT = process.env.PORT || 3000;
+const axios = require('axios');
 
 const config = {
     channelSecret: 'bec3ec3cc56dd6d6930d36e236668d00',
@@ -14,13 +15,6 @@ const app = express();
 app.get('/', (req, res) => res.send('Hello LINE BOT!(GET)')); //ブラウザ確認用(無くても問題ない)
 app.post('/webhook', line.middleware(config), (req, res) => {
     console.log(req.body.events);
-
-    //ここのif分はdeveloper consoleの"接続確認"用なので削除して問題ないです。
-    if(req.body.events[0].replyToken === '00000000000000000000000000000000' && req.body.events[1].replyToken === 'ffffffffffffffffffffffffffffffff'){
-        res.send('Hello LINE BOT!(POST)');
-        console.log('疎通確認用');
-        return; 
-    }
 
     Promise
       .all(req.body.events.map(handleEvent))
@@ -34,14 +28,41 @@ app.post('/webhook', line.middleware(config), (req, res) => {
 const client = new line.Client(config);
 
 async function handleEvent(event) {
-  if (event.type !== 'message' || event.message.type !== 'text') {
-    return Promise.resolve(null);
-  }
+    if (event.type !== 'message' || event.message.type !== 'text') {
+        return Promise.resolve(null);
+    }
 
-  return client.replyMessage(event.replyToken, {
-    type: 'text',
-    text: event.message.text //実際に返信の言葉を入れる箇所
-  });
+    if (event.message.text === 'にゃーん' || event.message.text === 'にゃーーーー') {
+        return client.replyMessage(event.replyToken, {
+            type: 'text',
+            text: 'にゃー',
+        });
+    } else if (event.message.text === 'かわいい') {
+        try {
+            const response = await axios.get('https://api.thecatapi.com/v1/images/search');
+            const catImageURL = response.data[0].url;
+    
+            const imageMessage = {
+                type: 'image',
+                originalContentUrl: catImageURL,
+                previewImageUrl: catImageURL,
+            };
+    
+            return client.replyMessage(event.replyToken, imageMessage);
+        }catch (error) {
+                console.error('猫の画像の取得中にエラーが発生しました', error);
+            }
+    } else {
+        const randomMessages = ['にゃー', 'にゃーーーん', 'にゃぁ？','にゃっ！'];
+        const randomIndex = Math.floor(Math.random() * randomMessages.length);
+        const randomMessage = randomMessages[randomIndex];
+
+        return client.replyMessage(event.replyToken, {
+            type: 'text',
+            text: randomMessage,
+        });
+    }
+  
 }
 
 app.listen(PORT);
