@@ -37,7 +37,7 @@ async function handleEvent(event) {
             type: 'text',
             text: 'にゃー',
         });
-    } else if (event.message.text === 'かわいい') {
+    } else if (event.message.text === 'かわいい' || event.message.text === '可愛い'|| event.message.text === '可愛いね'|| event.message.text === 'かわいいね') {
         try {
             const response = await axios.get('https://api.thecatapi.com/v1/images/search');
             const catImageURL = response.data[0].url;
